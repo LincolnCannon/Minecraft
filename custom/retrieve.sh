@@ -4,7 +4,7 @@ ENV_FILE="$SCRIPT_DIR/.env"
 
 # Read a variable from .env (handles "KEY = value" and "KEY=value")
 get_env() {
-  grep -E "^\s*${1}\s*=" "$ENV_FILE" 2>/dev/null | sed -E 's/^[^=]+=\s*//' | sed 's/\s*$//' | tr -d '\r' | head -1
+  grep -E "^\s*${1}\s*=" "$ENV_FILE" 2>/dev/null | sed -E 's/^[^=]+=\s*//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -d '\r' | head -1
 }
 
 BUCKET="$(get_env MINECRAFT_SETTINGS_BUCKET)"
