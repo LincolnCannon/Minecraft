@@ -22,8 +22,8 @@ REGION="${REGION:-us-east-1}"
 
 if [[ -n "$BUCKET" && -n "$TASK_ARN" ]]; then
   echo "Deploying server settings to EFS (S3 → DataSync)..."
-  aws s3 cp "$SCRIPT_DIR/server.properties" "s3://$BUCKET/minecraft/server.properties"
-  aws s3 cp "$SCRIPT_DIR/whitelist.json" "s3://$BUCKET/minecraft/whitelist.json"
+  aws s3 cp "$SCRIPT_DIR/server.properties" "s3://$BUCKET/server.properties"
+  aws s3 cp "$SCRIPT_DIR/whitelist.json" "s3://$BUCKET/whitelist.json"
   EXEC_ARN="$(aws datasync start-task-execution --task-arn "$TASK_ARN" --region "$REGION" --query 'TaskExecutionArn' --output text)"
   echo "DataSync task started. Waiting for sync to EFS..."
   while true; do
