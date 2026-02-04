@@ -39,6 +39,8 @@ else
 fi
 
 <<comment
+Run retrieve.sh to get the latest server.properties and whitelist.json from S3 -- always run this first and confirm desired settings.
+Run deploy.sh to push the latest server.properties and whitelist.json to EFS -- always run this last.
 General Instructions: https://github.com/doctorray117/minecraft-ondemand
 Delete Instructions: delete the hosted zone A record in Route 53 first, then run "npm run destroy"
 Settings Tasks: https://us-east-1.console.aws.amazon.com/datasync/home?region=us-east-1#/tasks
