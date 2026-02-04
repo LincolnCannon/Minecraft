@@ -2,12 +2,12 @@ import * as path from 'path';
 import {
   Stack,
   StackProps,
+  CfnOutput,
   aws_lambda as lambda,
   aws_route53 as route53,
   aws_logs as logs,
   aws_ssm as ssm,
   aws_iam as iam,
-  aws_logs_destinations as logDestinations,
   Duration,
   RemovalPolicy,
   Arn,
@@ -122,25 +122,21 @@ export class DomainStack extends Stack {
     });
 
     /**
-     * Give cloudwatch permission to invoke our lambda when our subscription filter
-     * picks up DNS queries.
+     * DNS-based trigger disabled: server is started only via the start-page
+     * HTTP button (Lambda Function URL). Query logging to CloudWatch is still
+     * enabled for debugging; no subscription filter invokes the Lambda.
      */
-    launcherLambda.addPermission('CWPermission', {
-      principal: new iam.ServicePrincipal(
-        `logs.${constants.DOMAIN_STACK_REGION}.amazonaws.com`
-      ),
-      action: 'lambda:InvokeFunction',
-      sourceAccount: this.account,
-      sourceArn: queryLogGroup.logGroupArn,
-    });
 
-    /**
-     * Create our log subscription filter to catch any log events containing
-     * our subdomain name and send them to our launcher lambda.
-     */
-    queryLogGroup.addSubscriptionFilter('SubscriptionFilter', {
-      destination: new logDestinations.LambdaDestination(launcherLambda),
-      filterPattern: logs.FilterPattern.anyTerm(subdomain),
+    const functionUrl = launcherLambda.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+      cors: {
+        allowedOrigins: [
+          `https://minecraft-start.${config.domainName}`,
+          `http://localhost`,
+        ],
+        allowedMethods: [lambda.HttpMethod.GET, lambda.HttpMethod.POST],
+        allowedHeaders: ['*'],
+      },
     });
 
     /**
@@ -164,6 +160,12 @@ export class DomainStack extends Stack {
       description: 'Minecraft launcher execution role ARN',
       parameterName: constants.LAUNCHER_LAMBDA_ARN_SSM_PARAMETER,
       stringValue: launcherLambda.role?.roleArn || '',
+    });
+
+    new CfnOutput(this, 'StartServerUrl', {
+      description: 'URL for the start-server API (use this in the minecraft-start webpage)',
+      value: functionUrl.url,
+      exportName: `${this.stackName}-StartServerUrl`,
     });
   }
 }
