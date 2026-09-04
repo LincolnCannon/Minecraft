@@ -84,7 +84,7 @@ export class MinecraftStack extends Stack {
     const cluster = new ecs.Cluster(this, 'Cluster', {
       clusterName: constants.CLUSTER_NAME,
       vpc,
-      containerInsights: false,
+      containerInsightsV2: ecs.ContainerInsights.DISABLED,
       enableFargateCapacityProviders: true,
     });
 

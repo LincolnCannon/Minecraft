@@ -2,12 +2,12 @@ import * as path from 'path';
 import {
   Stack,
   StackProps,
+  CfnOutput,
   aws_lambda as lambda,
   aws_route53 as route53,
   aws_logs as logs,
   aws_ssm as ssm,
   aws_iam as iam,
-  aws_logs_destinations as logDestinations,
   Duration,
   RemovalPolicy,
   Arn,
@@ -112,7 +112,7 @@ export class DomainStack extends Stack {
     const launcherLambda = new lambda.Function(this, 'LauncherLambda', {
       code: lambda.Code.fromAsset(path.resolve(__dirname, '../../lambda')),
       handler: 'lambda_function.lambda_handler',
-      runtime: lambda.Runtime.PYTHON_3_8,
+      runtime: lambda.Runtime.PYTHON_3_12,
       environment: {
         REGION: config.serverRegion,
         CLUSTER: constants.CLUSTER_NAME,
@@ -121,26 +121,24 @@ export class DomainStack extends Stack {
       logRetention: logs.RetentionDays.THREE_DAYS, // TODO: parameterize
     });
 
-    /**
-     * Give cloudwatch permission to invoke our lambda when our subscription filter
-     * picks up DNS queries.
-     */
-    launcherLambda.addPermission('CWPermission', {
-      principal: new iam.ServicePrincipal(
-        `logs.${constants.DOMAIN_STACK_REGION}.amazonaws.com`
-      ),
-      action: 'lambda:InvokeFunction',
-      sourceAccount: this.account,
-      sourceArn: queryLogGroup.logGroupArn,
+    /* Start page invokes this URL; DNS query logs are not wired to Lambda. */
+    const launcherFunctionUrl = launcherLambda.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+      cors: {
+        allowedOrigins: [
+          `https://minecraft-start.${config.domainName}`,
+          'http://localhost',
+        ],
+        allowedMethods: [lambda.HttpMethod.GET, lambda.HttpMethod.POST],
+        allowedHeaders: ['*'],
+      },
     });
 
-    /**
-     * Create our log subscription filter to catch any log events containing
-     * our subdomain name and send them to our launcher lambda.
-     */
-    queryLogGroup.addSubscriptionFilter('SubscriptionFilter', {
-      destination: new logDestinations.LambdaDestination(launcherLambda),
-      filterPattern: logs.FilterPattern.anyTerm(subdomain),
+    new CfnOutput(this, 'StartServerUrl', {
+      description:
+        'URL for the start-server API (use this in the minecraft-start webpage)',
+      value: launcherFunctionUrl.url,
+      exportName: 'minecraft-domain-stack-StartServerUrl',
     });
 
     /**

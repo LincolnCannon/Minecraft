@@ -135,7 +135,7 @@ A lambda function must exist that turns on your minecraft service. We do this wi
 
 Because we are relying on Route 53+CloudWatch to invoke the Lambda function, it _must_ reside in the N. Virginia (us-east-1) region.
 
-From the Lambda console, create a new function using `Author from scratch`. I've used Python 3.9 but the latest version available should be fine. Call it `minecraft-launcher`. The other defaults are fine, it will create an IAM role we will modify afterward. We do not need to specify a VPC.
+From the Lambda console, create a new function using `Author from scratch`. Use Python 3.12 (the runtime CDK deploys for the launcher). Call it `minecraft-launcher`. The other defaults are fine, it will create an IAM role we will modify afterward. We do not need to specify a VPC.
 
 Once the function has been created and you're in the code editor, replace the contents of the default lambda_function.py with this:
 
